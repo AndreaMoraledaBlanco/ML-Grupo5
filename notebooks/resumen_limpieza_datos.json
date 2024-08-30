@@ -1,0 +1,54 @@
+{
+    "fecha_limpieza": "2024-08-29 21:34:02",
+    "filas_originales": 103904,
+    "columnas_originales": 28,
+    "valores_nulos_originales": 0,
+    "valores_nulos_despues_limpieza": 0,
+    "variables_codificadas": [
+        "Gender",
+        "Customer Type",
+        "Type of Travel",
+        "Class",
+        "satisfaction"
+    ],
+    "distribucion_satisfaccion": {
+        "0": 58879,
+        "1": 45025
+    },
+    "columnas_numericas": [
+        "Unnamed: 0",
+        "id",
+        "Gender",
+        "Customer Type",
+        "Age",
+        "Type of Travel",
+        "Class",
+        "Flight Distance",
+        "Inflight wifi service",
+        "Departure/Arrival time convenient",
+        "Ease of Online booking",
+        "Gate location",
+        "Food and drink",
+        "Online boarding",
+        "Seat comfort",
+        "Inflight entertainment",
+        "On-board service",
+        "Leg room service",
+        "Baggage handling",
+        "Checkin service",
+        "Inflight service",
+        "Cleanliness",
+        "Departure Delay in Minutes",
+        "Arrival Delay in Minutes",
+        "satisfaction",
+        "PCA1",
+        "PCA2"
+    ],
+    "columnas_categoricas": [
+        "Gender",
+        "Customer Type",
+        "Type of Travel",
+        "Class",
+        "satisfaction"
+    ]
+}
