@@ -182,6 +182,13 @@ def save_model(model, filepath):
     joblib.dump(model, filepath)
     logging.info(f"Modelo guardado en {filepath}")
 
+def calculate_overfitting(model, X_train, y_train, X_test, y_test):
+    train_score = model.score(X_train, y_train)
+    test_score = model.score(X_test, y_test)
+    overfitting = (train_score - test_score) / train_score * 100
+    logging.info(f"Overfitting: {overfitting:.2f}%")
+    return overfitting
+
 def main():
     logging.info("Iniciando el entrenamiento del modelo...")
     
@@ -225,6 +232,13 @@ def main():
         final_scores = evaluate_model(optimized_model, X_test, y_test)
         for metric, score in final_scores.items():
             logging.info(f"{metric}: {score:.4f}")
+        
+        # Calcular overfitting
+        overfitting = calculate_overfitting(optimized_model, X_train, y_train, X_test, y_test)
+        if overfitting < 5:
+            logging.info("El overfitting está dentro del rango aceptable (<5%)")
+        else:
+            logging.warning("El overfitting es superior al 5%, considera aplicar más regularización")
         
         # Generar visualizaciones
         plot_learning_curve(optimized_model, X, y)

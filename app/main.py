@@ -3,6 +3,8 @@ import pandas as pd
 import numpy as np
 import joblib
 import os
+import shap
+import matplotlib.pyplot as plt
 
 def create_interaction_features(X):
     if isinstance(X, np.ndarray):
@@ -47,6 +49,12 @@ def prepare_input(input_data):
     df['convenience_rating'] = df[['Online boarding', 'Gate location', 'Ease of Online booking']].mean(axis=1)
     
     return df
+
+def plot_shap_summary(model, X):
+    explainer = shap.TreeExplainer(model)
+    shap_values = explainer.shap_values(X)
+    fig = shap.summary_plot(shap_values, X, plot_type="bar", show=False)
+    st.pyplot(fig)
 
 st.title('Predicción de Satisfacción de Aerolíneas')
 
@@ -109,6 +117,19 @@ if st.button('Predecir Satisfacción'):
         st.success(f'El pasajero probablemente estará satisfecho con una probabilidad del {probabilities[0][1]:.2%}')
     else:
         st.error(f'El pasajero probablemente estará insatisfecho con una probabilidad del {probabilities[0][0]:.2%}')
+    
+    if st.button('Mostrar explicación del modelo'):
+        plot_shap_summary(model, prepared_input)
+
+    # Sistema de feedback
+    feedback = st.radio("¿Fue útil esta predicción?", ("Sí", "No"))
+    if st.button('Enviar feedback'):
+        # Aquí puedes implementar la lógica para guardar el feedback
+        st.write("Gracias por tu feedback!")
 
 st.sidebar.header('Acerca de')
 st.sidebar.info('Esta aplicación predice la satisfacción de los pasajeros de aerolíneas basándose en varios factores.')
+
+# Mostrar otras visualizaciones guardadas
+st.image('reports/figures/confusion_matrix.png')
+st.image('reports/figures/roc_curve.png')
