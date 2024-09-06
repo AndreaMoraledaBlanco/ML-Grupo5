@@ -213,7 +213,6 @@ def generar_grafico_stack(tipo_grafico):
         plt.ylabel('Accuracy')
         plt.legend()
         plt.grid(True)
-        plt.show()
     
     plt.tight_layout()  # Ajustar el diseño
     return plt.gcf()
