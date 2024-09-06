@@ -6,7 +6,7 @@ from datetime import datetime
 import os
 
 # Cargar el modelo XGBoost
-model = joblib.load('../Modelos/xgboost_model.joblib')
+model = joblib.load('../src/Modelos/xgboost_model.joblib')
 
 # Función para hacer predicciones
 def predict(data):
@@ -16,13 +16,13 @@ def predict(data):
 # Función para guardar los resultados en CSV
 def save_to_csv(data, prediction, user_feedback):
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    file_path = '../Data/feedback_results.csv'
+    file_path = '../src/Data/feedback_results.csv'
     file_exists = os.path.isfile(file_path)
     
     with open(file_path, 'a', newline='') as file:
         writer = csv.writer(file)
         if not file_exists:
-            writer.writerow(['Timestamp'] + list(data.keys()) + ['feedback_pred', 'feedback_usu'])
+            writer.writerow(['Timestamp'] + list(data.keys()) + ['pred_satisfaction', 'feedback_satisfaction'])
         writer.writerow([timestamp] + list(data.values()) + [
             1 if prediction == 1 else 0,
             1 if user_feedback == 'Satisfecho' else 0
@@ -57,6 +57,12 @@ cleanliness = st.slider('Limpieza', 0, 5)
 departure_delay = st.number_input('Retraso en la salida (minutos)', min_value=0)
 arrival_delay = st.number_input('Retraso en la llegada (minutos)', min_value=0)
 
+# Nueva pregunta sobre la satisfacción general con la aerolínea
+satisfaction = st.radio(
+    "En general, ¿cómo se encuentra con el servicio de la aerolínea?",
+    ('Satisfecho', 'Insatisfecho')
+)
+
 # Inicializar variables de estado
 if 'prediction_made' not in st.session_state:
     st.session_state.prediction_made = False
@@ -66,7 +72,7 @@ if 'data' not in st.session_state:
     st.session_state.data = None
 
 # Botón para hacer la predicción
-if st.button('Mostrar feedback'):
+if st.button('Mostrar predición'):
     # Preparar los datos para la predicción
     data = {
         'Gender': 0 if gender == 'Masculino' else 1,
@@ -94,7 +100,7 @@ if st.button('Mostrar feedback'):
     }
 
     # Convertir los datos a DataFrame
-    data_df = pd.DataFrame([data])C
+    data_df = pd.DataFrame([data])
 
     # Hacer la predicción
     prediction = predict(data_df)
@@ -108,17 +114,17 @@ if st.button('Mostrar feedback'):
 if st.session_state.prediction_made:
     st.write('Predicción de satisfacción:', 'Satisfecho' if st.session_state.prediction == 1 else 'Insatisfecho')
 
-    # Botones de radio para la satisfacción del cliente
-    user_feedback = st.radio(
-        "¿Está de acuerdo con esta predicción?",
-        ('Sí', 'No')
-    )
-
     # Botón para guardar los resultados
-    if st.button('Enviar'):
-        save_to_csv(st.session_state.data, st.session_state.prediction, user_feedback)
-        st.success(f'Resultados guardados exitosamente. Su opinión: {user_feedback}')
+    if st.button('Enviar Formulario'):
+        save_to_csv(st.session_state.data, st.session_state.prediction, satisfaction)
+        st.success(f'Resultados guardados exitosamente. Su opinión sobre la predicción: {satisfaction}')
+
+        # Reiniciar el formulario
+        st.session_state.prediction_made = False
+        st.session_state.prediction = None
+        st.session_state.data = None
+        
+        # Notificar al usuario que los valores han sido reiniciados
+        st.info("Formulario reiniciado. Ingrese nuevos datos para realizar otra predicción.")
 
 
-# Mensaje informativo sobre dónde se guardan los datos
-st.info('Los datos se guardan en el archivo: ../Data/feedback_results.csv')
