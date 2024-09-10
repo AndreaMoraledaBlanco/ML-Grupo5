@@ -11,6 +11,13 @@ from datetime import datetime
 import json
 import os
 import random
+from fastapi import FastAPI
+from pydantic import BaseModel
+import mysql.connector
+from src.database.connection import create_connection, close_connection
+import uvicorn
+import datetime
+
 
 # Configuración de la página
 st.set_page_config(page_title="Airline Satisfaction Predictor", layout="wide", initial_sidebar_state="expanded")
@@ -35,6 +42,39 @@ def predict_satisfaction(model, inputs):
     prediction = 1 if proba[1] > 0.5 else 0
     return prediction, proba[1]
 
+# Función para guardar predicción en la base de datos
+def save_prediction(inputs, model_name, prediction, probability):
+    connection = create_connection()
+    cursor = connection.cursor()
+    
+    query = """
+    INSERT INTO predictions (model, prediction, probability, gender, customer_type, age, travel_type, flight_distance, 
+    inflight_wifi, departure_convenience, online_booking, gate_location, food_drink, online_boarding, seat_comfort, 
+    inflight_entertainment, onboard_service, legroom_service, baggage_handling, checkin_service, inflight_service_personal, 
+    cleanliness, departure_delay, arrival_delay)
+    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+    """
+    
+    values = (
+        model_name, prediction, probability,
+        inputs['Gender'].values[0], inputs['Customer Type'].values[0], inputs['Age'].values[0],
+        inputs['Type of Travel'].values[0], inputs['Flight Distance'].values[0], inputs['Inflight wifi service'].values[0],
+        inputs['Departure/Arrival time convenient'].values[0], inputs['Ease of Online booking'].values[0],
+        inputs['Gate location'].values[0], inputs['Food and drink'].values[0], inputs['Online boarding'].values[0],
+        inputs['Seat comfort'].values[0], inputs['Inflight entertainment'].values[0], inputs['On-board service'].values[0],
+        inputs['Leg room service'].values[0], inputs['Baggage handling'].values[0], inputs['Checkin service'].values[0],
+        inputs['Inflight service'].values[0], inputs['Cleanliness'].values[0], inputs['Departure Delay in Minutes'].values[0],
+        inputs['Arrival Delay in Minutes'].values[0]
+    )
+    
+    # Convertir todos los valores a tipos nativos de Python
+    values = tuple(map(lambda x: int(x) if isinstance(x, (np.int64, np.float64, np.float32)) else x, values))
+
+    cursor.execute(query, values)
+
+    connection.commit()
+    close_connection(connection)
+
 # Función para guardar el feedback
 def save_feedback(feedback, rating):
     feedback_data = {
@@ -54,6 +94,16 @@ def save_feedback(feedback, rating):
     
     with open(filename, "w") as f:
         json.dump(data, f, indent=4)
+
+    connection = create_connection()
+    cursor = connection.cursor()
+    
+    query = "INSERT INTO feedback (rating, comments) VALUES (%s, %s)"
+    values = (rating, comment)
+    
+    cursor.execute(query, values)
+    connection.commit()
+    close_connection(connection)
 
 # Función para cargar el feedback
 def load_feedback():
@@ -170,6 +220,10 @@ elif page == "Predicción de Satisfacción":
             # Realizar predicciones
             logistic_pred, logistic_prob = predict_satisfaction(logistic_model, inputs)
             xgboost_pred, xgboost_prob = predict_satisfaction(xgboost_model, inputs)
+
+            # Guardar predicciones en la base de datos
+            save_prediction(inputs, "Logistic", logistic_pred, logistic_prob)
+            save_prediction(inputs, "XGBoost", xgboost_pred, xgboost_prob)
         
         # Mostrar resultados
         st.subheader("Resultados de la Predicción 📊")
