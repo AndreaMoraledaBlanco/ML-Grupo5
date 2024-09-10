@@ -37,7 +37,7 @@ def predict(data, model):
     return None
 
 # Función para guardar los resultados en CSV
-def save_to_csv(data, predictions, user_feedback, selected_model):
+def save_to_csv(data, predictions, user_agreement):
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     file_path = 'src/Data/feedback_results.csv'
     file_exists = os.path.isfile(file_path)
@@ -46,36 +46,26 @@ def save_to_csv(data, predictions, user_feedback, selected_model):
         writer = csv.writer(file)
         if not file_exists:
             writer.writerow(['Timestamp'] + list(data.keys()) + 
-                            ['XGBoost_pred', 'LogisticRegression_pred', 'StackModel_pred', 'Otros_pred', 'feedback_satisfaction', 'selected_model'])
+                            ['XGBoost_pred', 'LogisticRegression_pred', 'StackModel_pred', 'RedNeuronal_pred', 'feedback_satisfaction'])
         writer.writerow([timestamp] + list(data.values()) + [
-            predictions['XGBoost'],
-            predictions['Logistic Regression'],
-            predictions['Stack Model'],
-            predictions['Red Neuronal'],
-            1 if user_feedback == 'Satisfecho' else 0,
-            selected_model  # Agregar el modelo seleccionado al CSV
+            predictions['Modelo1'],
+            predictions['Modelo2'],
+            predictions['Modelo3'],
+            predictions['Modelo4'],
+            1 if user_agreement == 'Sí' else 0
         ])
-
-# Nueva función para mostrar predicción y botón de guardado
-def display_and_save_results(model_name, prediction, model_key):
-    st.header(model_name)
-    if prediction is not None:
-        st.write(f"Predicción: {'Satisfecho' if prediction == 1 else 'Insatisfecho'}")
-    else:
-        st.write("Predicción no disponible")
-    
-    # Botón para guardar los resultados
-    if st.button(f'Guardar resultados {model_name}'):
-        st.session_state.selected_model = model_key
-        save_to_csv(st.session_state.data, st.session_state.predictions, satisfaction, st.session_state.selected_model)
-        st.success(f'Resultados guardados con el modelo {model_name}')
 
 # Crear la aplicación Streamlit
 st.title('Encuesta de Satisfacción')
 
+# Bienvenida personalizada
+st.markdown("""
+**¡Gracias por volar con nosotros!** 
+Te invitamos a compartir tu experiencia en esta breve encuesta (menos de 2 minutos). Tu opinión es muy valiosa para mejorar nuestros servicios.
+""")
 
 # Crear el formulario
-st.header('Por favor, rellene el siguiente formulario')
+#st.header('Por favor, rellene el siguiente formulario')
 
 # Dividir el formulario en columnas
 col1, col2 = st.columns(2)
@@ -118,24 +108,20 @@ with col5:
 with col6:
     arrival_delay = st.number_input('Retraso en la llegada (minutos)', min_value=0)
 
-# Nueva pregunta sobre la satisfacción general con la aerolínea (ahora como select box)
-satisfaction = st.selectbox(
-    "En general, ¿cómo se encuentra con el servicio de la aerolínea?",
-    ('Satisfecho', 'Insatisfecho')
-)
-
 # Inicializar variables de estado
-if 'predictions' not in st.session_state:
-    st.session_state.predictions = {}
+if 'results_shown' not in st.session_state:
+    st.session_state.results_shown = False
+if 'user_agreement' not in st.session_state:
+    st.session_state.user_agreement = None
 if 'data' not in st.session_state:
     st.session_state.data = None
-if 'selected_model' not in st.session_state:
-    st.session_state.selected_model = None
+if 'predictions' not in st.session_state:
+    st.session_state.predictions = None
 
-# Cuando el usuario selecciona su satisfacción, hacer las predicciones
-if satisfaction in ['Satisfecho', 'Insatisfecho']:
+# Botón para hacer la predicción
+if st.button('Ver Resultados'):
     # Preparar los datos para la predicción
-    data = {
+    st.session_state.data = {
         'Gender': 0 if gender == 'Masculino' else 1,
         'Customer Type': 0 if customer_type == 'Leal' else 1,
         'Age': age,
@@ -161,29 +147,42 @@ if satisfaction in ['Satisfecho', 'Insatisfecho']:
     }
 
     # Convertir los datos a DataFrame
-    data_df = pd.DataFrame([data])
+    data_df = pd.DataFrame([st.session_state.data])
 
     # Hacer las predicciones
     st.session_state.predictions = {
-        'XGBoost': predict(data_df, xgboost_model),
-        'Logistic Regression': predict(data_df, logistic_model),
-        'Stack Model': predict(data_df, stack_model),
-        'Red Neuronal': predict(data_df, neuronal_model)
+        'Modelo1': predict(data_df, xgboost_model),
+        'Modelo2': predict(data_df, logistic_model),
+        'Modelo3': predict(data_df, stack_model),
+        'Modelo4': predict(data_df, neuronal_model)
     }
-    st.session_state.data = data
 
-    # Crear pestañas
-    tab1, tab2, tab3, tab4 = st.tabs(["XGBoost", "Logistic Regression", "Stack Model", "Red Neuronal"])
+    st.session_state.results_shown = True
 
-    # Mostrar resultados y botón de guardado para cada pestaña usando la nueva función
-    with tab1:
-        display_and_save_results("XGBoost", st.session_state.predictions['XGBoost'], "XGBoost")
+# Mostrar resultados si están disponibles
+if st.session_state.results_shown:
+    # Crear una tabla con los resultados
+    results_df = pd.DataFrame({
+        'Predicción': [('Satisfecho' if pred == 1 else 'Insatisfecho') for pred in st.session_state.predictions.values()]
+    }, index=st.session_state.predictions.keys())
+    
+    st.subheader("Resultados de las predicciones")
+    st.table(results_df)
 
-    with tab2:
-        display_and_save_results("Logistic Regression", st.session_state.predictions['Logistic Regression'], "Logistic Regression")
+    # Preguntar al usuario si está de acuerdo con las predicciones
+    st.session_state.user_agreement = st.radio("¿Está de acuerdo con estas predicciones, las cuales se realizaron utilizando un modelo de machine learning?", ('Sí', 'No'))
 
-    with tab3:
-        display_and_save_results("Stack Model", st.session_state.predictions['Stack Model'], "Stack Model")
+    # Mostrar el botón "Enviar Formulario" solo si el usuario ha seleccionado una opción
+    if st.session_state.user_agreement:
+        if st.button('Enviar Formulario'):
+            save_to_csv(st.session_state.data, st.session_state.predictions, st.session_state.user_agreement)
+            #st.success('Formulario enviado y resultados guardados exitosamente.')
+            # Reiniciar las variables de estado
+            st.session_state.results_shown = False
+            st.session_state.user_agreement = None
+            st.session_state.data = None
+            st.session_state.predictions = None
+            
 
-    with tab4:
-        display_and_save_results("Red Neuronal", st.session_state.predictions['Red Neuronal'], "Red Neuronal")
+            # Mensaje de agradecimiento
+            st.success('¡Muchas gracias por tu colaboración! Tu opinión nos ayudará a mejorar tu próxima experiencia de vuelo.')
