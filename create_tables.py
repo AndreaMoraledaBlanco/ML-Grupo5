@@ -15,6 +15,7 @@ def create_tables():
         customer_type VARCHAR(20),
         age INT,
         travel_type VARCHAR(20),
+        flight_class VARCHAR(10),
         flight_distance FLOAT,
         inflight_wifi INT,
         departure_convenience INT,

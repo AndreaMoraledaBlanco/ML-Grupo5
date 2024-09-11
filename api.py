@@ -16,6 +16,7 @@ class PredictionInput(BaseModel):
     customer_type: str
     age: int
     travel_type: str
+    flight_class: str 
     flight_distance: float
     inflight_wifi: int
     departure_convenience: int
@@ -64,22 +65,30 @@ def predict_satisfaction(model, inputs):
     prediction = 1 if proba[1] > 0.5 else 0
     return prediction, proba[1]
 
-def save_prediction(inputs, model_name, prediction, probability):
+# Función para guardar predicción en la base de datos
+def save_prediction(inputs, logistic_pred, logistic_prob, xgboost_pred, xgboost_prob):
     connection = create_connection()
     cursor = connection.cursor()
     
     query = """
-    INSERT INTO predictions (model, prediction, probability, gender, customer_type, age, travel_type, flight_distance, 
-    inflight_wifi, departure_convenience, online_booking, gate_location, food_drink, online_boarding, seat_comfort, 
-    inflight_entertainment, onboard_service, legroom_service, baggage_handling, checkin_service, inflight_service_personal, 
-    cleanliness, departure_delay, arrival_delay)
-    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+    INSERT INTO predictions (
+        logistic_prediction, logistic_probability, 
+        xgboost_prediction, xgboost_probability, 
+        gender, customer_type, age, travel_type, flight_class,
+        flight_distance, inflight_wifi, departure_convenience, online_booking, gate_location, food_drink, 
+        online_boarding, seat_comfort, inflight_entertainment, onboard_service, legroom_service, 
+        baggage_handling, checkin_service, inflight_service_personal, cleanliness, 
+        departure_delay, arrival_delay
+    )
+    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     """
     
     values = (
-        model_name, prediction, probability,
+        logistic_pred, logistic_prob,  
+        xgboost_pred, xgboost_prob,    
         inputs['Gender'].values[0], inputs['Customer Type'].values[0], inputs['Age'].values[0],
-        inputs['Type of Travel'].values[0], inputs['Flight Distance'].values[0], inputs['Inflight wifi service'].values[0],
+        inputs['Type of Travel'].values[0], inputs['Class'].values[0],
+        inputs['Flight Distance'].values[0], inputs['Inflight wifi service'].values[0],
         inputs['Departure/Arrival time convenient'].values[0], inputs['Ease of Online booking'].values[0],
         inputs['Gate location'].values[0], inputs['Food and drink'].values[0], inputs['Online boarding'].values[0],
         inputs['Seat comfort'].values[0], inputs['Inflight entertainment'].values[0], inputs['On-board service'].values[0],
@@ -88,7 +97,11 @@ def save_prediction(inputs, model_name, prediction, probability):
         inputs['Arrival Delay in Minutes'].values[0]
     )
     
+    # Convertir todos los valores a tipos nativos de Python
+    values = tuple(map(lambda x: int(x) if isinstance(x, (np.int64, np.float64, np.float32)) else x, values))
+
     cursor.execute(query, values)
+
     connection.commit()
     close_connection(connection)
 

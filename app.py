@@ -57,14 +57,15 @@ def save_prediction(inputs, logistic_pred, logistic_prob, xgboost_pred, xgboost_
         baggage_handling, checkin_service, inflight_service_personal, cleanliness, 
         departure_delay, arrival_delay
     )
-    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     """
     
     values = (
-        logistic_pred, logistic_prob,  # Valores del modelo logístico
-        xgboost_pred, xgboost_prob,    # Valores del modelo XGBoost
+        logistic_pred, logistic_prob,  
+        xgboost_pred, xgboost_prob,    
         inputs['Gender'].values[0], inputs['Customer Type'].values[0], inputs['Age'].values[0],
-        inputs['Type of Travel'].values[0], inputs['Flight_class'].values[0], inputs['Flight Distance'].values[0], inputs['Inflight wifi service'].values[0],
+        inputs['Type of Travel'].values[0], inputs['Class'].values[0],
+        inputs['Flight Distance'].values[0], inputs['Inflight wifi service'].values[0],
         inputs['Departure/Arrival time convenient'].values[0], inputs['Ease of Online booking'].values[0],
         inputs['Gate location'].values[0], inputs['Food and drink'].values[0], inputs['Online boarding'].values[0],
         inputs['Seat comfort'].values[0], inputs['Inflight entertainment'].values[0], inputs['On-board service'].values[0],
