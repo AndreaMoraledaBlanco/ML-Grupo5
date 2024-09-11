@@ -37,7 +37,7 @@ def predict(data, model):
     return None
 
 # Función para guardar los resultados en CSV
-def save_to_csv(data, predictions, user_agreement):
+def save_to_csv(data, predictions, feedback):
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     file_path = 'src/Data/feedback_results.csv'
     file_exists = os.path.isfile(file_path)
@@ -46,13 +46,17 @@ def save_to_csv(data, predictions, user_agreement):
         writer = csv.writer(file)
         if not file_exists:
             writer.writerow(['Timestamp'] + list(data.keys()) + 
-                            ['XGBoost_pred', 'LogisticRegression_pred', 'StackModel_pred', 'RedNeuronal_pred', 'feedback_satisfaction'])
+                            ['XGBoost_pred', 'XGBoost_fback', 'LogisticRegression_pred', 'LogisticRegression_fback',
+                            'StackModel_pred', 'StackModel_fback', 'RedNeuronal_pred', 'RedNeuronal_fback'])
         writer.writerow([timestamp] + list(data.values()) + [
             predictions['Modelo1'],
+            feedback['Modelo1'],
             predictions['Modelo2'],
+            feedback['Modelo2'],
             predictions['Modelo3'],
+            feedback['Modelo3'],
             predictions['Modelo4'],
-            1 if user_agreement == 'Sí' else 0
+            feedback['Modelo4']
         ])
 
 # Crear la aplicación Streamlit
@@ -65,9 +69,6 @@ Te invitamos a compartir tu experiencia en esta breve encuesta (menos de 2 minut
 """)
 
 # Crear el formulario
-#st.header('Por favor, rellene el siguiente formulario')
-
-# Dividir el formulario en columnas
 col1, col2 = st.columns(2)
 col3, col4 = st.columns(2)
 col5, col6 = st.columns(2)
@@ -84,19 +85,17 @@ with col2:
 
 def satisfaction_radio(label, var_name):
     emojis = ['😡', '😠', '😞', '😐', '😊', '😁']  # Emojis de 0 a 5
-    st.write(label)  # Mostrar el título
-
-    # Crear radio buttons en fila horizontal
+    st.write(label)
     selected_value = st.radio(
         label,
         options=emojis,
-        index=0,  # Establecer valor inicial
+        index=0,
         key=var_name,
-        horizontal=True  # Opciones en horizontal
+        horizontal=True
     )
     return emojis.index(selected_value)
 
-# Columna 3: Botones para satisfacción
+# Columnas de satisfacción
 inflight_wifi_service = satisfaction_radio('Servicio de WiFi a bordo', 'inflight_wifi_service')
 departure_arrival_time_convenient = satisfaction_radio('Conveniencia del horario de salida/llegada', 'departure_arrival_time_convenient')
 ease_of_online_booking = satisfaction_radio('Facilidad de reserva en línea', 'ease_of_online_booking')
@@ -104,8 +103,6 @@ gate_location = satisfaction_radio('Ubicación de la puerta', 'gate_location')
 food_and_drink = satisfaction_radio('Comida y bebida', 'food_and_drink')
 online_boarding = satisfaction_radio('Embarque en línea', 'online_boarding')
 seat_comfort = satisfaction_radio('Confort del asiento', 'seat_comfort')
-
-# Columna 4: Radio buttons para satisfacción
 inflight_entertainment = satisfaction_radio('Entretenimiento a bordo', 'inflight_entertainment')
 onboard_service = satisfaction_radio('Servicio a bordo', 'onboard_service')
 leg_room_service = satisfaction_radio('Espacio para las piernas', 'leg_room_service')
@@ -113,6 +110,7 @@ baggage_handling = satisfaction_radio('Manejo de equipaje', 'baggage_handling')
 checkin_service = satisfaction_radio('Servicio de check-in', 'checkin_service')
 inflight_service = satisfaction_radio('Servicio durante el vuelo', 'inflight_service')
 cleanliness = satisfaction_radio('Limpieza', 'cleanliness')
+
 # Inputs numéricos en dos columnas
 with col5:
     departure_delay = st.number_input('Retraso en la salida (minutos)', min_value=0)
@@ -123,8 +121,6 @@ with col6:
 # Inicializar variables de estado
 if 'results_shown' not in st.session_state:
     st.session_state.results_shown = False
-if 'user_agreement' not in st.session_state:
-    st.session_state.user_agreement = None
 if 'data' not in st.session_state:
     st.session_state.data = None
 if 'predictions' not in st.session_state:
@@ -157,44 +153,69 @@ if st.button('Ver Resultados'):
         'Departure Delay in Minutes': departure_delay,
         'Arrival Delay in Minutes': arrival_delay,
     }
-
-    # Convertir los datos a DataFrame
+    
+    # Convertir el diccionario de datos en un DataFrame
     data_df = pd.DataFrame([st.session_state.data])
-
-    # Hacer las predicciones
+    
+    # Hacer predicciones
     st.session_state.predictions = {
         'Modelo1': predict(data_df, xgboost_model),
         'Modelo2': predict(data_df, logistic_model),
         'Modelo3': predict(data_df, stack_model),
         'Modelo4': predict(data_df, neuronal_model)
     }
-
+    
     st.session_state.results_shown = True
 
 # Mostrar resultados si están disponibles
 if st.session_state.results_shown:
-    # Crear una tabla con los resultados
-    results_df = pd.DataFrame({
-        'Predicción': [('Satisfecho' if pred == 1 else 'Insatisfecho') for pred in st.session_state.predictions.values()]
-    }, index=st.session_state.predictions.keys())
-    
     st.subheader("Resultados de las predicciones")
-    st.table(results_df)
+    
+    # Crear un DataFrame con los resultados y la columna de feedback
+    results_df = pd.DataFrame({
+        'Modelo': ['Modelo1', 'Modelo2', 'Modelo3', 'Modelo4'],
+        'Predicción': [('Satisfecho' if pred == 1 else 'Insatisfecho') for pred in st.session_state.predictions.values()],
+        'Feedback': [''] * 4  # Columna inicializada para el feedback
+    })
 
-    # Preguntar al usuario si está de acuerdo con las predicciones
-    st.session_state.user_agreement = st.radio("¿Está de acuerdo con estas predicciones, las cuales se realizaron utilizando un modelo de machine learning?", ('Sí', 'No'))
+    # Usar st.data_editor para mostrar los resultados y permitir la edición del feedback
+    edited_df = st.data_editor(
+        results_df,
+        column_config={
+            "Modelo": st.column_config.Column(
+                width="medium",
+                help="Nombre del modelo utilizado para la predicción",
+            ),
+            "Predicción": st.column_config.Column(
+                width="medium",
+            ),
+            "Feedback": st.column_config.SelectboxColumn(
+                width="medium",
+                options=["Sí", "No"],
+                required=True,
+                help="¿Estás de acuerdo con la predicción?",
+            )
+        },
+        disabled=["Modelo", "Predicción"],
+        hide_index=True,
+    )
 
-    # Mostrar el botón "Enviar Formulario" solo si el usuario ha seleccionado una opción
-    if st.session_state.user_agreement:
-        if st.button('Enviar Formulario'):
-            save_to_csv(st.session_state.data, st.session_state.predictions, st.session_state.user_agreement)
-            #st.success('Formulario enviado y resultados guardados exitosamente.')
+    # Botón para enviar el formulario
+    if st.button('Enviar Formulario'):
+        # Verificar si todos los feedbacks han sido proporcionados
+        if edited_df['Feedback'].isnull().sum() == 0:
+            # Codificar el feedback: Sí -> 1, No -> 0
+            feedback = dict(zip(edited_df['Modelo'], (edited_df['Feedback'] == 'Sí').astype(int)))
+            
+            # Guardar en CSV
+            save_to_csv(st.session_state.data, st.session_state.predictions, feedback)
+            
             # Reiniciar las variables de estado
             st.session_state.results_shown = False
-            st.session_state.user_agreement = None
             st.session_state.data = None
             st.session_state.predictions = None
-            
 
             # Mensaje de agradecimiento
             st.success('¡Muchas gracias por tu colaboración! Tu opinión nos ayudará a mejorar tu próxima experiencia de vuelo.')
+        else:
+            st.warning('Por favor, proporciona feedback para todas las predicciones antes de enviar el formulario.')
