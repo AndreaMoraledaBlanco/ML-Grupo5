@@ -18,5 +18,25 @@
         "timestamp": "2024-09-10 09:36:35",
         "rating": 3,
         "comment": "Esta rechida"
+    },
+    {
+        "timestamp": "2024-09-11 00:22:34",
+        "rating": 5,
+        "comment": "Fiable"
+    },
+    {
+        "timestamp": "2024-09-11 00:25:25",
+        "rating": 5,
+        "comment": "Fiable"
+    },
+    {
+        "timestamp": "2024-09-11 00:32:18",
+        "rating": 5,
+        "comment": "fiable"
+    },
+    {
+        "timestamp": "2024-09-11 09:12:29",
+        "rating": 5,
+        "comment": "Me ha gustado el dise\u00f1o"
     }
 ]

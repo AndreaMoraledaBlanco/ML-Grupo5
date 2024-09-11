@@ -7,9 +7,10 @@ def create_tables():
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS predictions (
         id INT AUTO_INCREMENT PRIMARY KEY,
-        model VARCHAR(50),
-        prediction INT,
-        probability FLOAT,
+        xgboost_prediction INT,
+        xgboost_probability FLOAT,
+        logistic_prediction INT,
+        logistic_probability FLOAT,
         gender VARCHAR(10),
         customer_type VARCHAR(20),
         age INT,
@@ -39,7 +40,7 @@ def create_tables():
     CREATE TABLE IF NOT EXISTS feedback (
         id INT AUTO_INCREMENT PRIMARY KEY,
         rating INT,
-        comments TEXT,
+        comment TEXT,
         timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
     """)

@@ -43,22 +43,28 @@ def predict_satisfaction(model, inputs):
     return prediction, proba[1]
 
 # Función para guardar predicción en la base de datos
-def save_prediction(inputs, model_name, prediction, probability):
+def save_prediction(inputs, logistic_pred, logistic_prob, xgboost_pred, xgboost_prob):
     connection = create_connection()
     cursor = connection.cursor()
     
     query = """
-    INSERT INTO predictions (model, prediction, probability, gender, customer_type, age, travel_type, flight_distance, 
-    inflight_wifi, departure_convenience, online_booking, gate_location, food_drink, online_boarding, seat_comfort, 
-    inflight_entertainment, onboard_service, legroom_service, baggage_handling, checkin_service, inflight_service_personal, 
-    cleanliness, departure_delay, arrival_delay)
-    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+    INSERT INTO predictions (
+        logistic_prediction, logistic_probability, 
+        xgboost_prediction, xgboost_probability, 
+        gender, customer_type, age, travel_type, flight_class,
+        flight_distance, inflight_wifi, departure_convenience, online_booking, gate_location, food_drink, 
+        online_boarding, seat_comfort, inflight_entertainment, onboard_service, legroom_service, 
+        baggage_handling, checkin_service, inflight_service_personal, cleanliness, 
+        departure_delay, arrival_delay
+    )
+    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     """
     
     values = (
-        model_name, prediction, probability,
+        logistic_pred, logistic_prob,  # Valores del modelo logístico
+        xgboost_pred, xgboost_prob,    # Valores del modelo XGBoost
         inputs['Gender'].values[0], inputs['Customer Type'].values[0], inputs['Age'].values[0],
-        inputs['Type of Travel'].values[0], inputs['Flight Distance'].values[0], inputs['Inflight wifi service'].values[0],
+        inputs['Type of Travel'].values[0], inputs['Flight_class'].values[0], inputs['Flight Distance'].values[0], inputs['Inflight wifi service'].values[0],
         inputs['Departure/Arrival time convenient'].values[0], inputs['Ease of Online booking'].values[0],
         inputs['Gate location'].values[0], inputs['Food and drink'].values[0], inputs['Online boarding'].values[0],
         inputs['Seat comfort'].values[0], inputs['Inflight entertainment'].values[0], inputs['On-board service'].values[0],
@@ -78,7 +84,7 @@ def save_prediction(inputs, model_name, prediction, probability):
 # Función para guardar el feedback
 def save_feedback(feedback, rating):
     feedback_data = {
-        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "rating": rating,
         "comment": feedback
     }
@@ -98,8 +104,8 @@ def save_feedback(feedback, rating):
     connection = create_connection()
     cursor = connection.cursor()
     
-    query = "INSERT INTO feedback (rating, comments) VALUES (%s, %s)"
-    values = (rating, comment)
+    query = "INSERT INTO feedback (rating, comment) VALUES (%s, %s)"
+    values = (rating, feedback)
     
     cursor.execute(query, values)
     connection.commit()
@@ -222,8 +228,9 @@ elif page == "Predicción de Satisfacción":
             xgboost_pred, xgboost_prob = predict_satisfaction(xgboost_model, inputs)
 
             # Guardar predicciones en la base de datos
-            save_prediction(inputs, "Logistic", logistic_pred, logistic_prob)
-            save_prediction(inputs, "XGBoost", xgboost_pred, xgboost_prob)
+            save_prediction(inputs, logistic_pred, round(logistic_prob, 2), xgboost_pred, round(xgboost_prob, 2))
+
+            print(round(logistic_prob, 2))
         
         # Mostrar resultados
         st.subheader("Resultados de la Predicción 📊")

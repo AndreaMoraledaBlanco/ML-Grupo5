@@ -92,12 +92,12 @@ def save_prediction(inputs, model_name, prediction, probability):
     connection.commit()
     close_connection(connection)
 
-def save_feedback(rating, comment):
+def save_feedback(rating, comments):
     connection = create_connection()
     cursor = connection.cursor()
     
     query = "INSERT INTO feedback (rating, comments) VALUES (%s, %s)"
-    values = (rating, comment)
+    values = (rating, comments)
     
     cursor.execute(query, values)
     connection.commit()
