@@ -82,25 +82,37 @@ with col2:
     class_type = st.selectbox('Clase', ['Económica', 'Económica Plus', 'Negocios'])
     flight_distance = st.number_input('Distancia de Vuelo', min_value=0)
 
-# Sliders en dos columnas
-with col3:
-    inflight_wifi_service = st.slider('Servicio de WiFi a bordo', 0, 5)
-    departure_arrival_time_convenient = st.slider('Conveniencia del horario de salida/llegada', 0, 5)
-    ease_of_online_booking = st.slider('Facilidad de reserva en línea', 0, 5)
-    gate_location = st.slider('Ubicación de la puerta', 0, 5)
-    food_and_drink = st.slider('Comida y bebida', 0, 5)
-    online_boarding = st.slider('Embarque en línea', 0, 5)
-    seat_comfort = st.slider('Confort del asiento', 0, 5)
-    
-with col4:
-    inflight_entertainment = st.slider('Entretenimiento a bordo', 0, 5)
-    onboard_service = st.slider('Servicio a bordo', 0, 5)
-    leg_room_service = st.slider('Espacio para las piernas', 0, 5)
-    baggage_handling = st.slider('Manejo de equipaje', 0, 5)
-    checkin_service = st.slider('Servicio de check-in', 0, 5)
-    inflight_service = st.slider('Servicio durante el vuelo', 0, 5)
-    cleanliness = st.slider('Limpieza', 0, 5)
+def satisfaction_radio(label, var_name):
+    emojis = ['😡', '😠', '😞', '😐', '😊', '😁']  # Emojis de 0 a 5
+    st.write(label)  # Mostrar el título
 
+    # Crear radio buttons en fila horizontal
+    selected_value = st.radio(
+        label,
+        options=emojis,
+        index=0,  # Establecer valor inicial
+        key=var_name,
+        horizontal=True  # Opciones en horizontal
+    )
+    return emojis.index(selected_value)
+
+# Columna 3: Botones para satisfacción
+inflight_wifi_service = satisfaction_radio('Servicio de WiFi a bordo', 'inflight_wifi_service')
+departure_arrival_time_convenient = satisfaction_radio('Conveniencia del horario de salida/llegada', 'departure_arrival_time_convenient')
+ease_of_online_booking = satisfaction_radio('Facilidad de reserva en línea', 'ease_of_online_booking')
+gate_location = satisfaction_radio('Ubicación de la puerta', 'gate_location')
+food_and_drink = satisfaction_radio('Comida y bebida', 'food_and_drink')
+online_boarding = satisfaction_radio('Embarque en línea', 'online_boarding')
+seat_comfort = satisfaction_radio('Confort del asiento', 'seat_comfort')
+
+# Columna 4: Radio buttons para satisfacción
+inflight_entertainment = satisfaction_radio('Entretenimiento a bordo', 'inflight_entertainment')
+onboard_service = satisfaction_radio('Servicio a bordo', 'onboard_service')
+leg_room_service = satisfaction_radio('Espacio para las piernas', 'leg_room_service')
+baggage_handling = satisfaction_radio('Manejo de equipaje', 'baggage_handling')
+checkin_service = satisfaction_radio('Servicio de check-in', 'checkin_service')
+inflight_service = satisfaction_radio('Servicio durante el vuelo', 'inflight_service')
+cleanliness = satisfaction_radio('Limpieza', 'cleanliness')
 # Inputs numéricos en dos columnas
 with col5:
     departure_delay = st.number_input('Retraso en la salida (minutos)', min_value=0)
