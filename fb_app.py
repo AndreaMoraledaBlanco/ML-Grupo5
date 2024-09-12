@@ -186,7 +186,7 @@ if st.session_state.results_shown:
     results_df = pd.DataFrame({
         'Modelo': ['Modelo1', 'Modelo2', 'Modelo3', 'Modelo4'],
         'Predicción': [('Satisfecho' if pred == 1 else 'Insatisfecho') for pred in st.session_state.predictions.values()],
-        'Feedback': [''] * 4  # Columna inicializada para el feedback
+        'Feedback': ['Sí'] * 4  # Inicializar con 'Sí' en lugar de cadenas vacías
     })
 
     # Usar st.data_editor para mostrar los resultados y permitir la edición del feedback

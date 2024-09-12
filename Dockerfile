@@ -22,12 +22,24 @@ COPY src/ /app/src/
 COPY pantallas/ /app/pantallas/
 COPY GUI.py /app/
 
+# Crea un directorio para los modelos y copia los archivos de modelo
+RUN mkdir -p /app/models
+COPY src/Modelos/*.joblib /app/models/
+
+# Copia los archivos de modelo Python (si no están ya incluidos en la copia de src/)
+COPY src/Modelos/logistic_model.py /app/src/Modelos/
+COPY src/Modelos/stack_model.py /app/src/Modelos/
+COPY src/Modelos/xgboost_model.py /app/src/Modelos/
+
 # Expone el puerto en el que Streamlit se ejecutará
 EXPOSE 8501
 
 # Variables de entorno para Streamlit
 ENV STREAMLIT_SERVER_PORT=8501
 ENV STREAMLIT_SERVER_HEADLESS=true
+
+# Variable de entorno para la ruta de los modelos
+ENV MODEL_PATH=/app/models
 
 # Comando para ejecutar la aplicación
 CMD ["streamlit", "run", "GUI.py"]
